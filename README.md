@@ -1,3 +1,5 @@
+### Docker Compose
+
 ```bash
 git clone https://github.com/Mahin556/voting-app.git
 
@@ -44,6 +46,8 @@ docker compose up -d frontend
 ```
 
 ---
+
+### Kubernetes
 
 ```bash
 #Install Kubectl
@@ -129,6 +133,10 @@ eksctl utils associate-iam-oidc-provider \
 kubectl get nodes
 kubectl get pods -A
 
+git clone https://github.com/Mahin556/voting-app.git
+
+cd voting-app
+
 kubectl create ns voting-app
 kubectl config set-context --current --namespace voting-app
 cd manifests
@@ -145,41 +153,118 @@ for i in {0..2}; do nslookup mongo-$i.db-service; done
 
 ```bash
 #On the mongo-0 pod, initialise the Mongo database Replica set. In the terminal run the following command:
-cat << EOF | kubectl exec -it mongo-0 -- mongo
-rs.initiate();
-sleep(2000);
-rs.add("mongo-1.mongo:27017");
-sleep(2000);
-rs.add("mongo-2.mongo:27017");
-sleep(2000);
-cfg = rs.conf();
-cfg.members[0].host = "mongo-0.mongo:27017";
-rs.reconfig(cfg, {force: true});
-sleep(5000);
-EOF
+kubectl exec -it mongo-0 -n voting-app -- mongosh
+
+rs.initiate({
+  _id: "rs0",
+  members: [
+    { _id: 0, host: "mongo-0.db-service:27017" },
+    { _id: 1, host: "mongo-1.db-service:27017" },
+    { _id: 2, host: "mongo-2.db-service:27017" }
+  ]
+})
+
 #Note: Wait until this command completes successfully, it typically takes 10-15 seconds to finish, and completes with the message: bye
 
 #To confirm run this in the terminal:
-kubectl exec -it mongo-0 -- mongo --eval "rs.status()" | grep "PRIMARY\|SECONDARY"
+kubectl exec -it mongo-0 -n voting-app -- mongosh --eval "rs.status()"
+
+kubectl exec -it mongo-0 -n voting-app -- mongosh --eval "
+rs.status().members.forEach(m => print(m.name + ' => ' + m.stateStr))
+"
+
 
 #Load the Data in the database by running this command:
-cat << EOF | kubectl exec -it mongo-0 -- mongo
+cat << 'EOF' | kubectl exec -i mongo-0 -n voting-app -- mongosh
 use langdb;
-db.languages.insert({"name" : "csharp", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 5, "compiled" : false, "homepage" : "https://dotnet.microsoft.com/learn/csharp", "download" : "https://dotnet.microsoft.com/download/", "votes" : 0}});
-db.languages.insert({"name" : "python", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 3, "script" : false, "homepage" : "https://www.python.org/", "download" : "https://www.python.org/downloads/", "votes" : 0}});
-db.languages.insert({"name" : "javascript", "codedetail" : { "usecase" : "web, client-side", "rank" : 7, "script" : false, "homepage" : "https://en.wikipedia.org/wiki/JavaScript", "download" : "n/a", "votes" : 0}});
-db.languages.insert({"name" : "go", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 12, "compiled" : true, "homepage" : "https://golang.org", "download" : "https://golang.org/dl/", "votes" : 0}});
-db.languages.insert({"name" : "java", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 1, "compiled" : true, "homepage" : "https://www.java.com/en/", "download" : "https://www.java.com/en/download/", "votes" : 0}});
-db.languages.insert({"name" : "nodejs", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 20, "script" : false, "homepage" : "https://nodejs.org/en/", "download" : "https://nodejs.org/en/download/", "votes" : 0}});
+
+db.languages.insertOne({
+  name: "csharp",
+  codedetail: {
+    usecase: "system, web, server-side",
+    rank: 5,
+    compiled: false,
+    homepage: "https://dotnet.microsoft.com/learn/csharp",
+    download: "https://dotnet.microsoft.com/download/",
+    votes: 0
+  }
+});
+
+db.languages.insertOne({
+  name: "python",
+  codedetail: {
+    usecase: "system, web, server-side",
+    rank: 3,
+    script: false,
+    homepage: "https://www.python.org/",
+    download: "https://www.python.org/downloads/",
+    votes: 0
+  }
+});
+
+db.languages.insertOne({
+  name: "javascript",
+  codedetail: {
+    usecase: "web, client-side",
+    rank: 7,
+    script: false,
+    homepage: "https://en.wikipedia.org/wiki/JavaScript",
+    download: "n/a",
+    votes: 0
+  }
+});
+
+db.languages.insertOne({
+  name: "go",
+  codedetail: {
+    usecase: "system, web, server-side",
+    rank: 12,
+    compiled: true,
+    homepage: "https://golang.org",
+    download: "https://golang.org/dl/",
+    votes: 0
+  }
+});
+
+db.languages.insertOne({
+  name: "java",
+  codedetail: {        ← FIXED
+    usecase: "system, web, server-side",
+    rank: 1,
+    compiled: true,
+    homepage: "https://www.java.com/en/",
+    download: "https://www.java.com/en/download/",
+    votes: 0
+  }
+});
+
+db.languages.insertOne({
+  name: "nodejs",
+  codedetail: {
+    usecase: "system, web, server-side",
+    rank: 20,
+    script: false,
+    homepage: "https://nodejs.org/en/",
+    download: "https://nodejs.org/en/download/",
+    votes: 0
+  }
+});
 
 db.languages.find().pretty();
 EOF
+
+
+kubectl exec -it mongo-0 -n voting-app -- mongosh
+
+use langdb
+
+db.languages.find().pretty()
 
 #Create Mongo secret:
 kubectl apply -f mongo-secret.yaml
 
 #Create GO API deployment by running the following command:
-kubectl apply -f api-deployment.yaml
+kubectl apply -f backend-deployment.yaml
 
 #Expose API deployment through service using the following command:
 kubectl expose deploy api \
@@ -187,10 +272,14 @@ kubectl expose deploy api \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
+
+#or 
+
+kubectl apply -f backend-service.yaml
 ```
 
 ```bash
-API_ELB_PUBLIC_FQDN=$(kubectl get svc api -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
+API_ELB_PUBLIC_FQDN=$(kubectl get svc backend-service -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
 until nslookup $API_ELB_PUBLIC_FQDN >/dev/null 2>&1; do sleep 2 && echo waiting for DNS to propagate...; done
 curl $API_ELB_PUBLIC_FQDN/ok
 ```
@@ -212,6 +301,10 @@ kubectl expose deploy frontend \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
+
+#or 
+
+kubectl apply -f frontend-service.yaml
 ```
 ```bash
 FRONTEND_ELB_PUBLIC_FQDN=$(kubectl get svc frontend -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
@@ -221,6 +314,11 @@ curl -I $FRONTEND_ELB_PUBLIC_FQDN
 ```bash
 #Query the MongoDB database directly to observe the updated vote data. 
 kubectl exec -it mongo-0 -- mongo langdb --eval "db.languages.find().pretty()"
+```
+```bash
+eksctl delete cluster \
+  --name my-eks-cluster \
+  --region ap-south-1
 ```
 
 ---

@@ -132,12 +132,12 @@ kubectl get pods -A
 kubectl create ns voting-app
 kubectl config set-context --current --namespace voting-app
 cd manifests
-kubectl apply -f mongo-statefulset.yaml #To create Mongo statefulset with Persistent volumes.
+kubectl apply -f mongo-statefullset.yaml #To create Mongo statefulset with Persistent volumes.
 kubectl apply -f mongo-service.yaml
 
 #Create a temporary network utils pod. Enter into a bash session within it. In the terminal run the following command:
 kubectl run --rm utils -it --image praqma/network-multitool -- bash
-for i in {0..2}; do nslookup mongo-$i.mongo; done
+for i in {0..2}; do nslookup mongo-$i.db-service; done
 #Note: This confirms that the DNS records have been created successfully and can be resolved within the cluster, 1 per MongoDB pod that exists behind the Headless Service - earlier created.
 ```
 

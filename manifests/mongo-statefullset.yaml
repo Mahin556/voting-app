@@ -1,10 +1,10 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: StatefulSet 
 metadata:
   name: mongo
   namespace: voting-app
 spec:
-  serviceName: mongo
+  serviceName: db-service
   replicas: 3
   selector:
     matchLabels:
@@ -37,7 +37,7 @@ spec:
             - "--interleave=all"
             - "mongod"
             - "--wiredTigerCacheSizeGB"
-            - "0.1"
+            - "0.25"
             - "--bind_ip"
             - "0.0.0.0"
             - "--replSet"
@@ -47,11 +47,11 @@ spec:
           volumeMounts:
             - name: mongodb-persistent-storage-claim
               mountPath: /data/db
-  volume:
-    - name: mongodb-persistent-storage-claim
-      hostpath: 
-        path: /data
-        type: DirectoryOrCreate
+      volumes:
+        - name: mongodb-persistent-storage-claim
+          hostPath: 
+            path: /data
+            type: DirectoryOrCreate
   # volumeClaimTemplates:
   #   - metadata:
   #       name: mongodb-persistent-storage-claim

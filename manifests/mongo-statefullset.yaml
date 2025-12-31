@@ -47,18 +47,20 @@ spec:
           volumeMounts:
             - name: mongodb-persistent-storage-claim
               mountPath: /data/db
-      volumes:
-        - name: mongodb-persistent-storage-claim
-          hostPath: 
-            path: /data
-            type: DirectoryOrCreate
-  # volumeClaimTemplates:
-  #   - metadata:
-  #       name: mongodb-persistent-storage-claim
-  #     spec:
-  #       accessModes:
-  #         - ReadWriteOnce
-  #       storageClassName: gp2
-  #       resources:
-  #         requests:
-  #           storage: 0.5Gi
+      # volumes:
+      #   - name: mongodb-persistent-storage-claim
+      #     hostPath: 
+      #       path: /data
+      #       type: DirectoryOrCreate
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-persistent-storage-claim
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: gp2
+        resources:
+          requests:
+            storage: 0.5Gi
+
+            

@@ -57,7 +57,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
-            successThreshold: 2
+            successThreshold: 1
           livenessProbe:
             httpGet:
               path: /ok
@@ -66,4 +66,4 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
-            successThreshold: 2
+            successThreshold: 1

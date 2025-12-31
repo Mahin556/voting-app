@@ -21,13 +21,13 @@ services:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
     networks:
       - voting_app
-    
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh mongodb://root:example@localhost:27017/ --quiet
       interval: 10s
       timeout: 10s
       retries: 3
       start_period: 20s
+
   mongo-1:
     image: mongo:6
     restart: always
@@ -54,6 +54,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+      
   mongo-2:
     image: mongo:6
     restart: always
@@ -80,6 +81,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
   backend:
     image: mahinraza556/voting-app:backend
     restart: always
@@ -104,6 +106,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+      
   frontend:
     image: mahinraza556/voting-app:frontend
     restart: always

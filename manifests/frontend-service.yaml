@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  labels:
+    app: voting-frontend-service
+    environment: production
+  namespace: voting-app
+spec:
+  selector:
+    app: voting-frontend-pod
+    environment: production
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
